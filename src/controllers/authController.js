@@ -24,22 +24,29 @@ export const signup = async (req, res) => {
     const hashedPassword = bcrypt.hashSync(password, salt);
 
     // Create a new user
+
     const newUser = await User.create({
       name,
       email,
       password: hashedPassword,
     });
+    console.log(newUser);
+    
 
     // Generate JWT
     const token = generateToken(newUser._id);
+    console.log(token);
 
     // Set the token as a cookie
-    res.cookie("token", token, {
+    res.cookie("jwt", token, {
       httpOnly: true, // Prevent access via client-side scripts
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       sameSite: "none", // Adjust for cross-origin requests
-      secure: process.env.NODE_ENV === "production", // Secure cookies in production
+      secure:false,
     });
+   
+
+    
 
     // Send success response
     res.status(201).json({
@@ -79,7 +86,7 @@ export const login = async (req, res) => {
 
     // Set the token as a cookie
 
-    res.cookie("token", token, {
+    res.cookie("jwt", token, {
       httpOnly: true, // Prevent access via client-side scripts
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       sameSite: "none", // Adjust for cross-origin requests
@@ -132,6 +139,7 @@ export const update = async (req, res) => {
 
 export const check = async (req, res) => {
   try {
+    console.log("User:", req.user);
     res.status(200).json({ user: req.user });
   }
   catch (error) {

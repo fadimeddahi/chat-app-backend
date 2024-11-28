@@ -1,20 +1,20 @@
 import jwt from "jsonwebtoken";
-import User from '../models/user.js';
+import User from "../models/user.js";
 
 const protectedRoute = async (req, res, next) => {
   try {
-    const token = req.cookies.token;
+    const token = req.cookies.jwt || "";
 
     if (!token) {
-      return res.status(401).json({ error: "Not authorized" });
+      return res.status(401).json({ error: "Token missing" });
     }
+    console.log("Token:", token);
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ["HS256"] });
+    console.log("Decoded token:", decoded);
+    
 
-    if (!decoded) {
-      return res.status(401).json({ error: "Not authorized" });
-    }
-
+   
     const user = await User.findById(decoded.id);
 
     if (!user) {
@@ -22,10 +22,19 @@ const protectedRoute = async (req, res, next) => {
     }
 
     req.user = user;
-
     next();
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    console.error("Error during token verification:", error);
+
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ error: "Token expired" });
+    }
+
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
