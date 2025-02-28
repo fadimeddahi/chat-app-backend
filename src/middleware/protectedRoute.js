@@ -3,17 +3,15 @@ import User from "../models/user.js";
 
 const protectedRoute = async (req, res, next) => {
   try {
-    const token = req.cookies.jwt || "";
-
+    console.log("Cookies:", req.cookies);
+    const token = req.cookies.jwt ;
+    console.log("Token:", token);
     if (!token) {
       return res.status(401).json({ error: "Token missing" });
     }
-    console.log("Token:", token);
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ["HS256"] });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log("Decoded token:", decoded);
-    
-
    
     const user = await User.findById(decoded.id);
 
