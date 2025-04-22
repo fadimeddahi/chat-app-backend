@@ -50,6 +50,7 @@ export const signup = async (req, res) => {
 };
 
 // LOGIN
+// LOGIN
 export const login = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -60,31 +61,34 @@ export const login = async (req, res) => {
     // Check if user exists
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ error: "Invalid credentials" });
+      return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    // Compare passwords
-    const isMatch = await bcrypt.compare(password, user.password);
+    // Compare passwords - use synchronous version for consistency with signup
+    const isMatch = bcrypt.compareSync(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ error: "Invalid credentials" });
+      return res.status(401).json({ error: "Invalid credentials" });
     }
 
+    // Generate token and set cookie - make consistent with signup
     const token = generateToken(user._id);
     res.cookie("jwt", token, {
       httpOnly: true,
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-      sameSite: "none",
       secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
     });
+    
 
+    // Return user data just like in signup
     res.status(200).json({
       _id: user._id,
       name: user.name,
       email: user.email,
-      profilePic: user.profilePic,
+      profilePic: user.profilePic || "", // Ensure this isn't undefined
     });
   } catch (error) {
-    console.error(error);
+    console.error("Login error:", error);
     res.status(500).json({ error: "Server error" });
   }
 };
